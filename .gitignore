@@ -1,0 +1,25 @@
+# Claude Code / superpowers scratch workspace (per-plan ledgers, briefs, review packages)
+.superpowers/
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+
+# Node / frontend
+node_modules/
+dist/
+.vite/
+
+# Env files
+.env
+.env.local
+
+# Editor/OS
+.vscode/
+.idea/
+.DS_Store
