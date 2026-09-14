@@ -43,8 +43,8 @@ This spec covers **#1 only**. Everything else is explicitly out of scope here.
 
 ## Architecture
 
-- **Frontend:** Vite + React (JavaScript) + Tailwind CSS, deployed on Vercel as
-  a static SPA.
+- **Frontend:** Vite + React + **TypeScript** + Tailwind CSS, deployed on Vercel
+  as a static SPA.
 - **Backend:** FastAPI (Python), deployed as Vercel serverless functions
   (stateless request/response only — no long-running processes or websockets
   in this sub-project).
@@ -56,6 +56,24 @@ This spec covers **#1 only**. Everything else is explicitly out of scope here.
   to use KaratCore). This is separate from the GST billing a shop issues to its
   own customers, which belongs to sub-project #2.
 - **ORM/migrations:** SQLAlchemy + Alembic. **Validation:** Pydantic schemas.
+
+## Code structure & type safety
+
+- **Backend (FastAPI):** organized in classes with clear responsibilities —
+  SQLAlchemy models (data), Pydantic schemas (I/O validation), a
+  repository-per-entity layer (tenants, memberships, subscriptions) for data
+  access, and a service layer holding business logic (onboarding, webhook
+  processing, access-control resolution). Routers stay thin and delegate to
+  services. Full type hints throughout, checked with **pyright** (mypy-strict
+  is a viable alternative but pyright matches the LSP already installed).
+- **Frontend (React):** functional components + hooks — the current React
+  idiom, not forced into class components. TypeScript's `strict` mode is
+  enabled for compile-time type checking. Non-component logic (the API
+  client, auth/session helpers, domain logic) is organized as classes/modules
+  rather than scattered functions, keeping the OOP principle where it fits
+  naturally without fighting React's component model.
+- Both `pyright` (backend) and `tsc --noEmit` (frontend) must pass with zero
+  errors as part of the definition of done for each feature branch.
 
 Three route/page groups in the frontend:
 - `(marketing)` — public signup/pricing pages
@@ -139,6 +157,14 @@ the two external sources of truth. Both are:
 - Webhook handler tests: given a Clerk/Stripe payload, assert the resulting DB
   state (including idempotency — replaying the same event changes nothing
   further).
+
+## Development workflow
+
+Each feature (from the implementation plan) is built on its own branch off
+`main` and merged via a pull request with a description covering what changed
+and why, rather than committed directly to `main`. A feature branch is ready
+to merge once: pyright/tsc pass with zero errors, its tests pass, and the
+feature works end-to-end for its slice of this spec.
 
 ## Open questions for sub-project #2 planning
 
