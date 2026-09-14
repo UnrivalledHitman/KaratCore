@@ -230,11 +230,11 @@ __all__ = ["app"]
 
 `backend/tests/test_health.py`:
 ```python
-from fastapi.testclient import TestClient
+import httpx
 
 from app.main import app
 
-client = TestClient(app)
+client = httpx.Client(transport=httpx.ASGITransport(app=app), base_url="http://testserver")
 
 
 def test_health_check_returns_ok() -> None:
@@ -1169,7 +1169,7 @@ def require_role(*roles: str):
 from typing import Annotated
 
 from fastapi import Depends, FastAPI
-from fastapi.testclient import TestClient
+import httpx
 
 from app.auth.clerk_jwt import ClerkClaims
 from app.auth.dependencies import TenantContext, get_current_claims, get_db, get_tenant_context, require_role
@@ -1187,7 +1187,7 @@ def protected_route(ctx: Annotated[TenantContext, Depends(require_role("owner", 
 
 
 def test_missing_token_returns_401() -> None:
-    client = TestClient(test_app)
+    client = httpx.Client(transport=httpx.ASGITransport(app=test_app), base_url="http://testserver")
     response = client.get("/protected")
     assert response.status_code == 401
 
@@ -1196,7 +1196,7 @@ def test_no_active_org_returns_403(db_session) -> None:
     test_app.dependency_overrides[get_db] = lambda: db_session
     test_app.dependency_overrides[get_current_claims] = lambda: ClerkClaims(sub="user_1", org_id=None)
 
-    client = TestClient(test_app)
+    client = httpx.Client(transport=httpx.ASGITransport(app=test_app), base_url="http://testserver")
     response = client.get("/protected", headers={"Authorization": "Bearer x"})
 
     assert response.status_code == 403
@@ -1210,7 +1210,7 @@ def test_org_with_no_membership_returns_404(db_session) -> None:
     test_app.dependency_overrides[get_db] = lambda: db_session
     test_app.dependency_overrides[get_current_claims] = lambda: ClerkClaims(sub="stranger", org_id="org_1")
 
-    client = TestClient(test_app)
+    client = httpx.Client(transport=httpx.ASGITransport(app=test_app), base_url="http://testserver")
     response = client.get("/protected", headers={"Authorization": "Bearer x"})
 
     assert response.status_code == 404
@@ -1225,7 +1225,7 @@ def test_role_not_permitted_returns_403(db_session) -> None:
     test_app.dependency_overrides[get_db] = lambda: db_session
     test_app.dependency_overrides[get_current_claims] = lambda: ClerkClaims(sub="user_1", org_id="org_1")
 
-    client = TestClient(test_app)
+    client = httpx.Client(transport=httpx.ASGITransport(app=test_app), base_url="http://testserver")
     response = client.get("/protected", headers={"Authorization": "Bearer x"})
 
     assert response.status_code == 403
@@ -1240,7 +1240,7 @@ def test_permitted_role_returns_200(db_session) -> None:
     test_app.dependency_overrides[get_db] = lambda: db_session
     test_app.dependency_overrides[get_current_claims] = lambda: ClerkClaims(sub="user_1", org_id="org_1")
 
-    client = TestClient(test_app)
+    client = httpx.Client(transport=httpx.ASGITransport(app=test_app), base_url="http://testserver")
     response = client.get("/protected", headers={"Authorization": "Bearer x"})
 
     assert response.status_code == 200
@@ -1628,14 +1628,14 @@ app = create_app()
 ```python
 from unittest.mock import MagicMock, patch
 
-from fastapi.testclient import TestClient
+import httpx
 
 from app.db.session import get_db
 from app.main import app
 from app.repositories.memberships import MembershipRepository
 from app.repositories.tenants import TenantRepository
 
-client = TestClient(app)
+client = httpx.Client(transport=httpx.ASGITransport(app=app), base_url="http://testserver")
 
 
 def _override_db(db_session):
@@ -1836,7 +1836,7 @@ app = create_app()
 ```python
 from unittest.mock import patch
 
-from fastapi.testclient import TestClient
+import httpx
 
 from app.db.session import get_db, set_service_context
 from app.main import app
@@ -1845,7 +1845,7 @@ from app.models.tenant import Tenant
 from app.repositories.subscriptions import SubscriptionRepository
 from app.repositories.tenants import TenantRepository
 
-client = TestClient(app)
+client = httpx.Client(transport=httpx.ASGITransport(app=app), base_url="http://testserver")
 
 
 def test_subscription_updated_syncs_status(db_session) -> None:
@@ -2023,7 +2023,7 @@ correct and a better test (it exercises the production dependency chain).
 ```python
 from unittest.mock import MagicMock, patch
 
-from fastapi.testclient import TestClient
+import httpx
 
 from app.auth.clerk_jwt import ClerkClaims
 from app.auth.dependencies import get_current_claims
@@ -2035,7 +2035,7 @@ from app.repositories.memberships import MembershipRepository
 from app.repositories.subscriptions import SubscriptionRepository
 from app.repositories.tenants import TenantRepository
 
-client = TestClient(app)
+client = httpx.Client(transport=httpx.ASGITransport(app=app), base_url="http://testserver")
 
 
 def _seed(db_session, role: str) -> None:
